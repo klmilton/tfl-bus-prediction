@@ -7,6 +7,8 @@ import requests
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from dotenv import load_dotenv
 import pandas as pd
+import sqlite3
+
 
 load_dotenv()
 
@@ -168,6 +170,45 @@ def save_dataframe(df: pd.DataFrame, out_path: str) -> None:
 	else:
 		df.to_csv(out_path, index=False)  # Default to CSV if no extension matches
 
+
+
+
+##################### SQL Database Setup #####################
+
+#connect to SQlite database
+conn = sqlite3.connect('bus_data.db')
+cursor = conn.cursor()
+
+#create a table for bus arrivals
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS bus_arrivals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT,
+    stop_point_id TEXT,
+    route TEXT,
+    destination TEXT,
+    expected_arrival TEXT,
+    time_to_station INTEGER
+)
+               ''')
+
+conn.commit()
+conn.close()
+
+def insert_into_db(data):
+    conn = sqlite3.connect('bus_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+    INSERT INTO bus_arrivals (timestamp, stop_point_id, route, destination, expected_arrival, time_to_station)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', (data['timestamp'], data['stop_point_id'], data['route'], data['destination'], data['expected_arrival'], data['time_to_station']))
+    
+    conn.commit()
+    conn.close()
+
+
+###################### Running the Client ######################
 
 if __name__ == "__main__":
 	""" Example usage:
